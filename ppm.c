@@ -4,6 +4,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+//============================================================================
+//                           Structure declarations
+//============================================================================
+typedef struct Coordonnees Coordonnees;
+struct Coordonnees
+{
+int x;
+int y;
+};
+
 
 
 //============================================================================
@@ -19,11 +29,11 @@ void ppm_write_to_file(int width, int height, u_char* data, FILE* file, char* im
 void ppm_read_from_file(int *width, int *height, u_char** data, FILE* file,char* img );
 
 // Desaturate (transform to B&W) <image> (of size <width> * <height>)
-void ppm_desaturate(u_char* image, int width, int height);
+void ppm_desaturate(u_char* image, int width, int height, Coordonnees* point );
 
 // Shrink image (of original size <width> * <height>) by factor <factor>
 // <width> and <height> are updated accordingly
-void ppm_shrink(u_char** image, int *width, int *height, int factor);
+void ppm_shrink(u_char** image, int *width, int *height, int factor, Coordonnees* point );
 
 
 //============================================================================
@@ -31,17 +41,19 @@ void ppm_shrink(u_char** image, int *width, int *height, int factor);
 //============================================================================
 int main(int argc, char* argv[])
 {
+  Coordonnees monpoint;
+
   //--------------------------------------------------------------------------
   // Read file "gargouille.ppm" into image (width and height)
   //--------------------------------------------------------------------------
+   
   u_char* image = NULL;
   int width;
   int height;
  FILE* ppm_input;
  char gar[30]="gargouille.ppm";
   ppm_read_from_file(&width, &height, &image, ppm_input,gar);
-  
-
+ 
 
   //--------------------------------------------------------------------------
   // Create a desaturated (B&W) copy of the image we've just read and
@@ -54,11 +66,11 @@ int main(int argc, char* argv[])
   memcpy(image_bw, image, 3 * width * height * sizeof(*image_bw));
 
   // Desaturate image_bw
-  ppm_desaturate(image_bw, width, height);
+  ppm_desaturate(image_bw, width, height, &monpoint);
 
   // Write the desaturated image into "gargouille_BW.ppm"
   FILE* ppm_output;
-char gar_bw[30]="gargouille.ppm";
+char gar_bw[30]="gargouille_BW.ppm";
   ppm_write_to_file(width, height, image_bw, ppm_output,gar_bw);
  
 
@@ -77,11 +89,11 @@ char gar_bw[30]="gargouille.ppm";
   memcpy(image_small, image, 3 * width_small * height_small * sizeof(*image_small));
 
   // Shrink image_small size 2-fold
-  ppm_shrink(&image_small, &width_small, &height_small, 2);
+  ppm_shrink(&image_small, &width_small, &height_small, 2, &monpoint);
 
   // Write the desaturated image into "gargouille_small.ppm"
    FILE* ppm_output2;
-   char gar_small[40]="gargouille_BW.ppm";
+   char gar_small[40]="gargouille_small.ppm";
   ppm_write_to_file(width_small, height_small, image_small, ppm_output2, gar_small);
     
 
@@ -127,14 +139,14 @@ void ppm_read_from_file(int *width, int *height, u_char** data,FILE* file,char* 
 
 }
 
-void ppm_desaturate(u_char* image, int width, int height)
+void ppm_desaturate(u_char* image, int width, int height, Coordonnees* point)
 {
-  int x, y;
+  
 
   // For each pixel ...
-  for (x = 0 ; x < width ; x++)
+  for (point->x = 0 ; point->x < width ; point->x++)
   {
-    for (y = 0 ; y < height ; y++)
+    for (point->y = 0 ; point->y < height ; point->y++)
     {
       u_int grey_lvl = 0;
       int rgb_canal;
@@ -142,19 +154,20 @@ void ppm_desaturate(u_char* image, int width, int height)
       // Compute the grey level
       for (rgb_canal = 0 ; rgb_canal < 3 ; rgb_canal++)
       {
-        grey_lvl += image[ 3 * (y * width + x) + rgb_canal ];
+        grey_lvl += image[ 3 * (point->y * width + point->x) + rgb_canal ];
       }
       grey_lvl /= 3;
       assert(grey_lvl >= 0 && grey_lvl <=255);
 
       // Set the corresponding pixel's value in new_image
-      memset(&image[3 * (y * width + x)], grey_lvl, 3);
+      memset(&image[3 * (point->y * width + point->x)], grey_lvl, 3);
     }
   }
 }
 
-void ppm_shrink(u_char** image, int *width, int *height, int factor)
+void ppm_shrink(u_char** image, int *width, int *height, int factor, Coordonnees* point)
 {
+  
   // Compute new image size and allocate memory for the new image
   int new_width   = (*width) / factor;
   int new_height  = (*height) / factor;
@@ -164,10 +177,10 @@ void ppm_shrink(u_char** image, int *width, int *height, int factor)
   int factor_squared = factor * factor;
 
   // For each pixel of the new image...
-  int x, y;
-  for (x = 0 ; x < new_width ; x++)
+
+  for (point->x = 0 ; point->x < new_width ; point->x++)
   {
-    for (y = 0 ; y < new_height ; y++)
+    for (point->y = 0 ; point->y < new_height ; point->y++)
     {
       // ... compute the average RGB values of the set of pixels (a square of side factor)
       // that correspond to the pixel we are creating.
@@ -179,8 +192,8 @@ void ppm_shrink(u_char** image, int *width, int *height, int factor)
 
       // Compute coordinates and index of the first (top-left) pixel from the
       // model image corresponding to the pixel we are creating
-      int x0 = x * factor;
-      int y0 = y * factor;
+      int x0 = point->x * factor;
+      int y0 = point->y * factor;
       int i0 = 3 * (y0 * (*width) + x0);
 
       // Compute RGB values for the new pixel
@@ -206,9 +219,9 @@ void ppm_shrink(u_char** image, int *width, int *height, int factor)
       blue  /= factor_squared;
 
       // Set new pixel's RGB values
-      new_image[ 3 * (y * new_width + x) ]     = red;
-      new_image[ 3 * (y * new_width + x) + 1 ] = green;
-      new_image[ 3 * (y * new_width + x) + 2 ] = blue;
+      new_image[ 3 * (point->y * new_width + point->x) ]     = red;
+      new_image[ 3 * (point->y * new_width + point->x) + 1 ] = green;
+      new_image[ 3 * (point->y * new_width + point->x) + 2 ] = blue;
     }
   }
 
