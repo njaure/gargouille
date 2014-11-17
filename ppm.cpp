@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
 
   size_bw.width  = size.width;
   size_bw.height = size.height;
-  size_bw.image = (u_char*) malloc(3 * size.width * size.height * sizeof(*size_bw.image));
+  size_bw.image = new u_char[3*size.width * size.height];
   memcpy(size_bw.image, size.image, 3 * size.width * size.height * sizeof(*size_bw.image));
 
   // Desaturate image_bw
@@ -63,7 +63,7 @@ char gar_bw[30]="gargouille_BW.ppm";
  
 
   // Free the desaturated image
-  free(size_bw.image);
+  delete size_bw.image;
 
 
   //--------------------------------------------------------------------------
@@ -76,7 +76,7 @@ char gar_bw[30]="gargouille_BW.ppm";
 
   size_small.width  = size.width;
   size_small.height = size.height;
-   size_small.image = (u_char*) malloc(3 * size_small.width * size_small.height * sizeof(*size_small.image));
+   size_small.image = new u_char[3*size.width * size.height];
   memcpy(size_small.image, size.image, 3 * size_small.width * size_small.height * sizeof(*size_small.image));
 
   // Shrink image_small size 2-fold
@@ -89,8 +89,8 @@ char gar_bw[30]="gargouille_BW.ppm";
     
 
   // Free the not yet freed images
-  free(size.image);
-  free(size_small.image);
+  delete size.image;
+  delete size_small.image;
 
   return 0;
 }
