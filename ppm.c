@@ -7,12 +7,18 @@
 //============================================================================
 //                           Structure declarations
 //============================================================================
-typedef struct Coordonnees Coordonnees;
-struct Coordonnees
+typedef  struct 
 {
 int x;
 int y;
-};
+}Coordonnees;
+
+typedef  struct 
+{
+int width;
+int height;
+}Taille;
+
 
 
 
@@ -29,7 +35,7 @@ void ppm_write_to_file(int width, int height, u_char* data, FILE* file, char* im
 void ppm_read_from_file(int *width, int *height, u_char** data, FILE* file,char* img );
 
 // Desaturate (transform to B&W) <image> (of size <width> * <height>)
-void ppm_desaturate(u_char* image, int width, int height, Coordonnees* point );
+void ppm_desaturate(u_char* image,int width, int height, Coordonnees* point );
 
 // Shrink image (of original size <width> * <height>) by factor <factor>
 // <width> and <height> are updated accordingly
@@ -42,36 +48,39 @@ void ppm_shrink(u_char** image, int *width, int *height, int factor, Coordonnees
 int main(int argc, char* argv[])
 {
   Coordonnees monpoint;
+  Taille size;
 
   //--------------------------------------------------------------------------
   // Read file "gargouille.ppm" into image (width and height)
   //--------------------------------------------------------------------------
    
   u_char* image = NULL;
-  int width;
-  int height;
+  
  FILE* ppm_input;
  char gar[30]="gargouille.ppm";
-  ppm_read_from_file(&width, &height, &image, ppm_input,gar);
- 
+  ppm_read_from_file(&size.width, &size.height, &image, ppm_input,gar);
+  
 
   //--------------------------------------------------------------------------
   // Create a desaturated (B&W) copy of the image we've just read and
   // write it into "gargouille_BW.ppm"
   //--------------------------------------------------------------------------
   // Copy image into image_bw
-  int width_bw  = width;
-  int height_bw = height;
-  u_char* image_bw = (u_char*) malloc(3 * width * height * sizeof(*image_bw));
-  memcpy(image_bw, image, 3 * width * height * sizeof(*image_bw));
+
+  Taille size_bw; //struc pour image_bw
+
+  size_bw.width  = size.width;
+  size_bw.height = size.height;
+  u_char* image_bw = (u_char*) malloc(3 * size.width * size.height * sizeof(*image_bw));
+  memcpy(image_bw, image, 3 * size.width * size.height * sizeof(*image_bw));
 
   // Desaturate image_bw
-  ppm_desaturate(image_bw, width, height, &monpoint);
+  ppm_desaturate(image_bw, size.width, size.height, &monpoint);
 
   // Write the desaturated image into "gargouille_BW.ppm"
   FILE* ppm_output;
-char gar_bw[30]="gargouille_BW.ppm";
-  ppm_write_to_file(width, height, image_bw, ppm_output,gar_bw);
+char gar_bw[30]="gargouille_BW.ppm"; 
+  ppm_write_to_file(size.width, size.height, image_bw, ppm_output,gar_bw);
  
 
   // Free the desaturated image
@@ -83,18 +92,21 @@ char gar_bw[30]="gargouille_BW.ppm";
   // write it into "gargouille_small.ppm"
   //--------------------------------------------------------------------------
   // Copy image into image_small
-  int width_small  = width;
-  int height_small = height;
-  u_char* image_small = (u_char*) malloc(3 * width_small * height_small * sizeof(*image_small));
-  memcpy(image_small, image, 3 * width_small * height_small * sizeof(*image_small));
+
+  Taille size_small; //struc pour image_small
+
+  size_small.width  = size.width;
+  size_small.height = size.height;
+  u_char* image_small = (u_char*) malloc(3 * size_small.width * size_small.height * sizeof(*image_small));
+  memcpy(image_small, image, 3 * size_small.width * size_small.height * sizeof(*image_small));
 
   // Shrink image_small size 2-fold
-  ppm_shrink(&image_small, &width_small, &height_small, 2, &monpoint);
+  ppm_shrink(&image_small, &size_small.width, &size_small.height, 2, &monpoint);
 
   // Write the desaturated image into "gargouille_small.ppm"
    FILE* ppm_output2;
    char gar_small[40]="gargouille_small.ppm";
-  ppm_write_to_file(width_small, height_small, image_small, ppm_output2, gar_small);
+  ppm_write_to_file(size_small.width, size_small.height, image_small, ppm_output2, gar_small);
     
 
   // Free the not yet freed images
@@ -117,7 +129,7 @@ void ppm_write_to_file(int width, int height, u_char* data,FILE* file,char* img)
   fprintf(file, "P6\n%d %d\n255\n", width, height);
 
   // Write pixels
-  fwrite(data, 3, width*height,file);
+  fwrite(data, 3, width*height, file);
   fclose(file);
  
 }
@@ -130,7 +142,7 @@ void ppm_read_from_file(int *width, int *height, u_char** data,FILE* file,char* 
   // Read file header
   fscanf(file, "P6\n%d %d\n255\n", width, height);
 
-  // Allocate memory according to width and height
+  // Allocate memory according to size.width and height
   *data = (u_char*) malloc(3 * (*width) * (*height) * sizeof(**data));
 
   // Read the actual image data
