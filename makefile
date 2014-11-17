@@ -1,7 +1,10 @@
 all: ppm
 
-ppm: ppm.c ppm_function.o
-	gcc -Wall -o ppm ppm.c ppm_function.o
+ppm: ppm.cpp ppm_function.o
+	g++ -Wall -o ppm ppm.cpp ppm_function.o
 
-ppm_function.o : ppm.h ppm_function.c
-	gcc -Wall -o ppm_function.o ppm_function.c -c
+ppm_function.o : ppm.h ppm_function.cpp
+	g++ -Wall -o ppm_function.o ppm_function.cpp -c
+clean: 
+	rm *.o
+
