@@ -1,15 +1,63 @@
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ppm.h"
+
+//============================================================================
+//                           Getters definitions
+//============================================================================
+
+int picture::getwidth() const
+{
+return width;
+}
+
+int picture::getheight() const
+{
+return height;
+}
+
+u_char* picture::getimage() const
+{
+return image;
+}
+
+//============================================================================
+//                           Constructor definition
+//============================================================================
 
 
+picture::picture()
+{
+width = 0;
+height = 0;
+image = new u_char [1];
+}
+
+//============================================================================
+//                           Copy Constructor definition
+//============================================================================
+
+
+picture::picture(const picture& model)
+{
+width = model.getwidth();
+height = model.getheight();
+image = new u_char [3 * width * height];
+memcpy(image, model.getimage(), 3 * width * height * sizeof(*image));
+}
+picture::~picture()
+{
+delete [] image;
+}
 
 //============================================================================
 //                           Function definitions
 //============================================================================
-void ppm_write_to_file(int width, int height, u_char* data,FILE* file,char* img)
+
+
+void picture::ppm_write_to_file(FILE* file, const char* img)
 {
 
   file=fopen(img, "wb");
@@ -17,29 +65,30 @@ void ppm_write_to_file(int width, int height, u_char* data,FILE* file,char* img)
   fprintf(file, "P6\n%d %d\n255\n", width, height);
 
   // Write pixels
-  fwrite(data, 3, width*height, file);
+  fwrite(image, 3, width*height, file);
   fclose(file);
  
 }
 
-void ppm_read_from_file(int *width, int *height, u_char** data,FILE* file,char* img)
+void picture::ppm_read_from_file(FILE* file, const char* img)
 {
   file = fopen(img, "rb");
   
   
   // Read file header
-  fscanf(file, "P6\n%d %d\n255\n", width, height);
+  fscanf(file, "P6\n%d %d\n255\n", &width, &height);
 
   // Allocate memory according to size.width and height
-  *data = (u_char*) malloc(3 * (*width) * (*height) * sizeof(**data));
+  delete [] image;
+  image = new u_char [3 * (width) * (height)];
 
   // Read the actual image data
-  fread(*data, 3, (*width) * (*height), file);
+  fread(image, 3, (width) * (height), file);
   fclose(file);
 
 }
 
-void ppm_desaturate(u_char* image, int width, int height, int x, int y)
+void picture::ppm_desaturate()
 {
   // For each pixel ...
   for (x = 0 ; x < width ; x++)
@@ -63,13 +112,14 @@ void ppm_desaturate(u_char* image, int width, int height, int x, int y)
   }
 }
 
-void ppm_shrink(u_char** image, int *width, int *height, int factor,int x, int y)
+void picture::ppm_shrink(int factor)
 {
  
   // Compute new image size and allocate memory for the new image
-  int new_width   = (*width) / factor;
-  int new_height  = (*height) / factor;
-  u_char* new_image = (u_char*) malloc(3 * new_width * new_height * sizeof(*new_image));
+  int new_width   = (width) / factor;
+  int new_height  = (height) / factor;
+  u_char* new_image = new u_char [3 * new_width * new_height ];
+
 
   // Precompute factor^2 (for performance reasons)
   int factor_squared = factor * factor;
@@ -92,7 +142,7 @@ void ppm_shrink(u_char** image, int *width, int *height, int factor,int x, int y
       // model image corresponding to the pixel we are creating
       int x0 = x * factor;
       int y0 = y * factor;
-      int i0 = 3 * (y0 * (*width) + x0);
+      int i0 = 3 * (y0 * (width) + x0);
 
       // Compute RGB values for the new pixel
       int dx, dy;
@@ -102,12 +152,13 @@ void ppm_shrink(u_char** image, int *width, int *height, int factor,int x, int y
         {
           // Compute the offset of the current pixel (in the model image)
           // with regard to the top-left pixel of the current "set of pixels"
-          int delta_i = 3 * (dy * (*width) + dx);
+          int delta_i = 3 * (dy * (width) + dx);
 
           // Accumulate RGB values
-          red   += (*image)[i0+delta_i];
-          green += (*image)[i0+delta_i+1];
-          blue  += (*image)[i0+delta_i+2];
+          red   += (image)[i0+delta_i];
+          green += (image)[i0+delta_i+1];
+          blue  += (image)[i0+delta_i+2];
+          
         }
       }
 
@@ -124,10 +175,10 @@ void ppm_shrink(u_char** image, int *width, int *height, int factor,int x, int y
   }
 
   // Update image size
-  *width  = new_width;
-  *height = new_height;
+  width  = new_width;
+  height = new_height;
 
   // Update image
-  free(*image);
-  *image = new_image;
+  delete image ;
+  image = new_image;
 }
