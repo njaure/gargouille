@@ -2,11 +2,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "picture.h"
+
+#include "ppm.h"
+
 
 //============================================================================
 //                           Getters definitions
 //============================================================================
+
 
 int picture::getwidth() const
 {
@@ -28,11 +33,35 @@ return image;
 //============================================================================
 
 
+int picture::getwidth() const
+{
+return width;
+}
+
+int picture::getheight() const
+{
+return height;
+}
+
+u_char* picture::getimage() const
+{
+return image;
+}
+
+//============================================================================
+//                           Constructor definition
+//============================================================================
+
+
+
 picture::picture()
 {
 width = 0;
 height = 0;
+
 image = new u_char ;
+
+image = new u_char [1];
 }
 
 //============================================================================
@@ -47,6 +76,7 @@ height = model.getheight();
 image = new u_char [3 * width * height];
 memcpy(image, model.getimage(), 3 * width * height * sizeof(*image));
 }
+
 // ===========================================================================
 //                                  Destructor definition
 // ===========================================================================
@@ -54,6 +84,10 @@ picture::~picture(void)
 {
 delete image;
 
+
+picture::~picture()
+{
+delete [] image;
 }
 
 //============================================================================
@@ -83,7 +117,11 @@ void picture::ppm_read_from_file(FILE* file, const char* img)
   fscanf(file, "P6\n%d %d\n255\n", &width, &height);
 
   // Allocate memory according to size.width and height
+
   delete image;
+
+  delete [] image;
+
   image = new u_char [3 * (width) * (height)];
 
   // Read the actual image data
